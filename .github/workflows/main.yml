@@ -6,7 +6,7 @@ on:
       urls:
         description: 'Comma-separated list of URLs to scan'
         required: true
-        
+
 jobs:
   jok3r_scan:
     runs-on: ubuntu-latest
@@ -24,6 +24,10 @@ jobs:
       - name: Pull Jok3r Docker Image
         run: |
           sudo docker pull koutto/jok3r
+
+      - name: Start Jok3r container in interactive mode for debugging
+        run: |
+          sudo docker run -it --name jok3r-container koutto/jok3r python3 jok3r.py --help
 
       - name: Clone Jok3r and Install Dependencies in Docker Container
         run: |
