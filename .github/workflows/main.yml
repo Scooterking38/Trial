@@ -1,75 +1,41 @@
-name: Comprehensive Bug Bounty Testing
+name: Jok3r Bug Bounty Attack
 
 on:
   workflow_dispatch:
     inputs:
       target_url:
-        description: 'Target URL for penetration testing'
+        description: 'Target URL for testing'
         required: true
 
 jobs:
-  bug_bounty:
+  jok3r_scan:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Update package lists
-        run: sudo apt-get update
-
-      # Install Tools
-      - name: Install Nmap
-        run: sudo apt-get install -y nmap
-
-      - name: Install Sublist3r (with correct path)
+      - name: Install dependencies
         run: |
-          sudo apt-get install -y python3-pip
-          pip3 install git+https://github.com/aboul3la/Sublist3r.git
-          sudo ln -s ~/.local/bin/sublist3r /usr/local/bin/sublist3r
-          which sublist3r
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-pip python3-venv git
+          sudo apt-get install -y nmap sqlmap nikto whatweb gobuster wfuzz
 
-      - name: Install sqlmap
-        run: sudo apt-get install -y sqlmap
-
-      - name: Install Jok3r (global path)
+      - name: Install Jok3r
         run: |
-          sudo apt-get install -y git python3 python3-pip
           git clone https://github.com/koutto/jok3r.git
           cd jok3r
           pip3 install -r requirements.txt
-          sudo ln -s "$PWD/jok3r.py" /usr/local/bin/jok3r
+          sudo ln -sf "$PWD/jok3r.py" /usr/local/bin/jok3r
           echo "$PWD" >> $GITHUB_PATH
+
+      - name: Verify Jok3r Installation
+        run: |
           which jok3r || echo "Jok3r not found"
+          jok3r --version || echo "Jok3r version check failed"
 
-      # Verify tools are correctly installed
-      - name: Confirm Tools Are Installed
+      - name: Run Jok3r Attack
         run: |
-          which nmap || echo "Nmap not found"
-          which sublist3r || echo "Sublist3r not found"
-          which sqlmap || echo "SQLmap not found"
-          which jok3r || echo "Jok3r not found"
+          jok3r attack -t ${{ github.event.inputs.target_url }} --output jok3r_results || echo "Jok3r attack failed"
 
-      # Run Nmap
-      - name: Run Nmap Scan
-        run: nmap -sV -oN nmap_scan_results.txt ${{ github.event.inputs.target_url }}
-      - name: Display Nmap Results
-        run: cat nmap_scan_results.txt
-
-      # Run Sublist3r with proper path
-      - name: Run Sublist3r
-        run: |
-          ~/.local/bin/sublist3r -d ${{ github.event.inputs.target_url }} -o subdomains.txt
-          cat subdomains.txt || echo "No subdomains found"
-
-      # Run sqlmap
-      - name: Run sqlmap
-        run: sqlmap -u ${{ github.event.inputs.target_url }} --batch --output-dir=sqlmap_results
-      - name: Display sqlmap Results
-        run: cat sqlmap_results/* || echo "No SQL vulnerabilities found"
-
-      # Run Jok3r scan
-      - name: Run Jok3r Scan
-        run: |
-          jok3r attack -t ${{ github.event.inputs.target_url }} --output jok3r_results || echo "Jok3r failed"
       - name: Display Jok3r Results
         run: cat jok3r_results/* || echo "No Jok3r results found"
