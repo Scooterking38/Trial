@@ -31,7 +31,7 @@ jobs:
       - name: Verify Jok3r Installation
         run: |
           which jok3r || echo "Jok3r not found"
-          jok3r --version || echo "Jok3r version check failed"
+          sudo jok3r --version || echo "Jok3r version check failed"
 
       - name: Run Jok3r Attack
         run: |
