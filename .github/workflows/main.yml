@@ -1,15 +1,17 @@
-name: Jok3r Bug Bounty Attack
+name: Jok3r Security Scan
 
 on:
   workflow_dispatch:
     inputs:
-      target_url:
-        description: 'Target URL for testing'
+      urls:
+        description: 'Comma-separated list of URLs to scan'
         required: true
+        default: 'http://example1.com,http://example2.com'
 
 jobs:
   jok3r_scan:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -18,24 +20,19 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python3 python3-pip python3-venv git
-          sudo apt-get install -y nmap sqlmap nikto whatweb gobuster wfuzz
+          sudo apt-get install -y nmap
 
-      - name: Install Jok3r
+      - name: Clone Jok3r and Install
         run: |
-          git clone https://github.com/koutto/jok3r.git
+          git clone https://github.com/heshamm1/jok3r.git
           cd jok3r
-          pip3 install -r requirements.txt
-          sudo ln -sf "$PWD/jok3r.py" /usr/local/bin/jok3r
-          echo "$PWD" >> $GITHUB_PATH
+          chmod +x setup.sh
+          sudo ./setup.sh
 
-      - name: Verify Jok3r Installation
+      - name: Run Jok3r Scan on Provided URLs
         run: |
-          which jok3r || echo "Jok3r not found"
-          sudo jok3r --version || echo "Jok3r version check failed"
-
-      - name: Run Jok3r Attack
-        run: |
-          sudo jok3r attack -t ${{ github.event.inputs.target_url }} --output jok3r_results || echo "Jok3r attack failed"
-
-      - name: Display Jok3r Results
-        run: cat jok3r_results/* || echo "No Jok3r results found"
+          IFS=',' read -r -a urls <<< "${{ github.event.inputs.urls }}"
+          for url in "${urls[@]}"; do
+            echo "Scanning $url"
+            python3 jok3r.py attack -t "$url" --all
+          done
