@@ -18,30 +18,27 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo docker pull koutto/jok3r
-          sudo docker run -i -t --name jok3r-container -w /root/jok3r --net=host koutto/jok3r
-          # Add Docker's official GPG key:
-          sudo apt-get update
-          sudo apt-get install ca-certificates curl
-          sudo install -m 0755 -d /etc/apt/keyrings
-          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-          sudo chmod a+r /etc/apt/keyrings/docker.asc
+          sudo apt-get install -y python3-pip python3-dev git
+          sudo apt-get install -y curl ca-certificates
 
-          # Add the repository to Apt sources:
-          echo \
-            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-            $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
-          sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-          sudo apt-get update
-
-      - name: Clone Jok3r and Install
+      - name: Pull Jok3r Docker Image
         run: |
-          python3 jok3r.py toolbox --install-all --fast
+          sudo docker pull koutto/jok3r
+
+      - name: Clone Jok3r and Install Dependencies in Docker Container
+        run: |
+          sudo docker run -d --name jok3r-container koutto/jok3r
+          sudo docker exec jok3r-container python3 jok3r.py toolbox --install-all --fast
 
       - name: Run Jok3r Scan on Provided URLs
         run: |
           IFS=',' read -r -a urls <<< "${{ github.event.inputs.urls }}"
           for url in "${urls[@]}"; do
             echo "Scanning $url"
-            python3 jok3r.py attack -t "$url" --all
+            sudo docker exec jok3r-container python3 jok3r.py attack -t "$url" --all
           done
+
+      - name: Cleanup Docker container
+        run: |
+          sudo docker stop jok3r-container
+          sudo docker rm jok3r-container
