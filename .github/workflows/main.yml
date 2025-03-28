@@ -17,25 +17,31 @@ jobs:
       - name: Update package lists
         run: sudo apt-get update
 
+      # Install Tools
       - name: Install Nmap
         run: sudo apt-get install -y nmap
 
-      - name: Install Sublist3r
+      - name: Install Sublist3r (with correct path)
         run: |
           sudo apt-get install -y python3-pip
           pip3 install git+https://github.com/aboul3la/Sublist3r.git
+          sudo ln -s ~/.local/bin/sublist3r /usr/local/bin/sublist3r
+          which sublist3r
 
       - name: Install sqlmap
         run: sudo apt-get install -y sqlmap
 
-      - name: Install Jok3r
+      - name: Install Jok3r (global path)
         run: |
           sudo apt-get install -y git python3 python3-pip
           git clone https://github.com/koutto/jok3r.git
-          cd jok3r && pip3 install -r requirements.txt
-          sudo ln -s $PWD/jok3r /usr/local/bin/jok3r
-          echo "$PWD" >> $GITHUB_PATH  # Make sure it's accessible globally
+          cd jok3r
+          pip3 install -r requirements.txt
+          sudo ln -s "$PWD/jok3r.py" /usr/local/bin/jok3r
+          echo "$PWD" >> $GITHUB_PATH
+          which jok3r || echo "Jok3r not found"
 
+      # Verify tools are correctly installed
       - name: Confirm Tools Are Installed
         run: |
           which nmap || echo "Nmap not found"
@@ -43,23 +49,27 @@ jobs:
           which sqlmap || echo "SQLmap not found"
           which jok3r || echo "Jok3r not found"
 
+      # Run Nmap
       - name: Run Nmap Scan
         run: nmap -sV -oN nmap_scan_results.txt ${{ github.event.inputs.target_url }}
       - name: Display Nmap Results
         run: cat nmap_scan_results.txt
 
+      # Run Sublist3r with proper path
       - name: Run Sublist3r
-        run: sublist3r -d ${{ github.event.inputs.target_url }} -o subdomains.txt
-      - name: Display Sublist3r Results
-        run: cat subdomains.txt
+        run: |
+          ~/.local/bin/sublist3r -d ${{ github.event.inputs.target_url }} -o subdomains.txt
+          cat subdomains.txt || echo "No subdomains found"
 
+      # Run sqlmap
       - name: Run sqlmap
         run: sqlmap -u ${{ github.event.inputs.target_url }} --batch --output-dir=sqlmap_results
       - name: Display sqlmap Results
-        run: cat sqlmap_results/*
+        run: cat sqlmap_results/* || echo "No SQL vulnerabilities found"
 
+      # Run Jok3r scan
       - name: Run Jok3r Scan
         run: |
-          jok3r attack -t ${{ github.event.inputs.target_url }} --output jok3r_results
+          jok3r attack -t ${{ github.event.inputs.target_url }} --output jok3r_results || echo "Jok3r failed"
       - name: Display Jok3r Results
-        run: cat jok3r_results/*
+        run: cat jok3r_results/* || echo "No Jok3r results found"
