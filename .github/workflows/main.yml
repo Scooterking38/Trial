@@ -23,6 +23,8 @@ jobs:
 
       - name: Pull Jok3r Docker Image
         run: |
+          sudo docker stop jok3r-container
+          sudo docker rm jok3r-container
           sudo docker pull koutto/jok3r
 
       - name: Start Jok3r container in interactive mode for debugging
