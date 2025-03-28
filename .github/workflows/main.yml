@@ -28,14 +28,14 @@ jobs:
 
       - name: Create output directory
         run: |
-          mkdir -p output/
+          mkdir -p $GITHUB_WORKSPACE/output
 
       - name: Run LinkFinder
         run: |
-          python -m linkfinder -i ${{ github.event.inputs.url }} -o output/
+          python -m linkfinder -i ${{ github.event.inputs.url }} -o $GITHUB_WORKSPACE/output/
         
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
           name: linkfinder-results
-          path: output/
+          path: $GITHUB_WORKSPACE/output/
