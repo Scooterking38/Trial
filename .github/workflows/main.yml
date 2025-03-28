@@ -6,6 +6,7 @@ on:
       url:
         description: 'URL to scan with LinkFinder'
         required: true
+        type: string
 
 jobs:
   run-linkfinder:
@@ -32,13 +33,13 @@ jobs:
         run: |
           mkdir -p $GITHUB_WORKSPACE/output
 
-      - name: Run LinkFinder
+      - name: Run LinkFinder and save output to file
         run: |
           cd LinkFinder
-          python linkfinder.py -i ${{ github.event.inputs.url }} -o $GITHUB_WORKSPACE/output/results.html
+          python linkfinder.py -i ${{ github.event.inputs.url }} -o cli > $GITHUB_WORKSPACE/output/results.txt
 
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
           name: linkfinder-results
-          path: $GITHUB_WORKSPACE/output/results.html
+          path: $GITHUB_WORKSPACE/output/results.txt
