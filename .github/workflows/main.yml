@@ -20,9 +20,6 @@ jobs:
       - name: Install Nmap
         run: sudo apt-get install -y nmap
 
-      - name: Install OWASP ZAP
-        run: sudo apt-get install -y zaproxy
-
       - name: Install Sublist3r
         run: |
           sudo apt-get install -y python3-pip
@@ -46,16 +43,6 @@ jobs:
         run: nmap -sV -oN nmap_scan_results.txt ${{ github.event.inputs.target_url }}
       - name: Display Nmap Results
         run: cat nmap_scan_results.txt
-
-  zap_scan:
-    runs-on: ubuntu-latest
-    needs: setup_tools
-    steps:
-      - name: Run OWASP ZAP Baseline Scan
-        run: |
-          zaproxy -cmd -quickurl ${{ github.event.inputs.target_url }} -quickprogress -quickout zap_scan_results.txt
-      - name: Display OWASP ZAP Results
-        run: cat zap_scan_results.txt
 
   subdomain_enum:
     runs-on: ubuntu-latest
