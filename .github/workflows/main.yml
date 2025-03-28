@@ -6,7 +6,6 @@ on:
       url:
         description: 'URL to scan with LinkFinder'
         required: true
-        type: string
 
 jobs:
   run-linkfinder:
