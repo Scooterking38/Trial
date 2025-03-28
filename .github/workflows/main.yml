@@ -35,7 +35,7 @@ jobs:
           # Run the Jok3r container with limited memory and CPU to prevent overuse of system resources
           sudo docker run -d \
             --name jok3r-container \
-            --memory="2g" \ # Limit memory to 2GB (adjust as necessary for your setup)
+            --memory="10g" \ # Limit memory to 2GB (adjust as necessary for your setup)
             --cpus="1.0" \ # Limit CPU to 1 core (adjust as necessary)
             koutto/jok3r python3 jok3r.py --help
 
