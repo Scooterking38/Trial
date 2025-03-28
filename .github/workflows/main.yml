@@ -1,4 +1,4 @@
-name: Penetration Testing Workflow
+name: Comprehensive Bug Bounty Testing
 
 on:
   workflow_dispatch:
@@ -8,39 +8,79 @@ on:
         required: true
 
 jobs:
-  nmap_scan:
+  setup_tools:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Update package lists
+        run: sudo apt-get update
+
       - name: Install Nmap
         run: sudo apt-get install -y nmap
 
+      - name: Install OWASP ZAP
+        run: sudo apt-get install -y zaproxy
+
+      - name: Install Sublist3r
+        run: |
+          sudo apt-get install -y python3-pip
+          pip3 install git+https://github.com/aboul3la/Sublist3r.git
+
+      - name: Install sqlmap
+        run: sudo apt-get install -y sqlmap
+
+      - name: Install Jok3r
+        run: |
+          sudo apt-get install -y git python3 python3-pip
+          git clone https://github.com/koutto/jok3r.git
+          cd jok3r && pip3 install -r requirements.txt
+          sudo ln -s $PWD/jok3r /usr/local/bin/jok3r
+
+  nmap_scan:
+    runs-on: ubuntu-latest
+    needs: setup_tools
+    steps:
       - name: Run Nmap Scan
         run: nmap -sV -oN nmap_scan_results.txt ${{ github.event.inputs.target_url }}
-
       - name: Display Nmap Results
         run: cat nmap_scan_results.txt
 
   zap_scan:
     runs-on: ubuntu-latest
-    needs: nmap_scan
+    needs: setup_tools
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Install OWASP ZAP
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget
-          wget https://github.com/zaproxy/zaproxy/releases/download/v2.11.1/ZAP_2.11.1_Linux.tar.gz
-          tar -xvzf ZAP_2.11.1_Linux.tar.gz
-          sudo mv ZAP_2.11.1 /opt/zap
-
       - name: Run OWASP ZAP Baseline Scan
         run: |
-          /opt/zap/zap.sh -cmd -quickurl ${{ github.event.inputs.target_url }} -quickprogress -quickout zap_scan_results.txt
-
+          zaproxy -cmd -quickurl ${{ github.event.inputs.target_url }} -quickprogress -quickout zap_scan_results.txt
       - name: Display OWASP ZAP Results
         run: cat zap_scan_results.txt
+
+  subdomain_enum:
+    runs-on: ubuntu-latest
+    needs: setup_tools
+    steps:
+      - name: Run Sublist3r
+        run: sublist3r -d ${{ github.event.inputs.target_url }} -o subdomains.txt
+      - name: Display Sublist3r Results
+        run: cat subdomains.txt
+
+  sql_injection_test:
+    runs-on: ubuntu-latest
+    needs: setup_tools
+    steps:
+      - name: Run sqlmap
+        run: sqlmap -u ${{ github.event.inputs.target_url }} --batch --output-dir=sqlmap_results
+      - name: Display sqlmap Results
+        run: cat sqlmap_results/*
+
+  jok3r_scan:
+    runs-on: ubuntu-latest
+    needs: setup_tools
+    steps:
+      - name: Run Jok3r Scan
+        run: |
+          jok3r attack -t ${{ github.event.inputs.target_url }} --output jok3r_results
+      - name: Display Jok3r Results
+        run: cat jok3r_results/*
