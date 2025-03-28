@@ -6,8 +6,7 @@ on:
       urls:
         description: 'Comma-separated list of URLs to scan'
         required: true
-        default: 'http://example1.com,http://example2.com'
-
+        
 jobs:
   jok3r_scan:
     runs-on: ubuntu-latest
@@ -22,6 +21,19 @@ jobs:
           sudo apt install docker
           sudo docker pull koutto/jok3r
           sudo docker run -i -t --name jok3r-container -w /root/jok3r --net=host koutto/jok3r
+          # Add Docker's official GPG key:
+          sudo apt-get update
+          sudo apt-get install ca-certificates curl
+          sudo install -m 0755 -d /etc/apt/keyrings
+          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+          sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+          # Add the repository to Apt sources:
+          echo \
+            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+            $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
+          sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          sudo apt-get update
 
       - name: Clone Jok3r and Install
         run: |
