@@ -32,7 +32,7 @@ jobs:
 
       - name: Start Jok3r container in interactive mode for debugging
         run: |
-          sudo docker run -d --name jok3r-container --memory=4g koutto/jok3r python3 jok3r.py --help
+          sudo docker run -d --name jok3r-container --memory=3g koutto/jok3r python3 jok3r.py --help
 
       - name: Clone Jok3r and Install Dependencies in Docker Container
         run: |
