@@ -28,6 +28,7 @@ jobs:
           cd jok3r
           chmod +x setup.sh
           sudo ./setup.sh
+          python3 jok3r.py toolbox --install-all --fast
 
       - name: Run Jok3r Scan on Provided URLs
         run: |
