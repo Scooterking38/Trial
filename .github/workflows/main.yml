@@ -21,10 +21,13 @@ jobs:
           sudo apt-get install -y python3-pip python3-dev git
           sudo apt-get install -y curl ca-certificates
 
+      - name: Stop all running Docker containers
+        run: |
+          sudo docker stop $(sudo docker ps -q) || true
+          sudo docker rm $(sudo docker ps -a -q) || true
+
       - name: Pull Jok3r Docker Image
         run: |
-          sudo docker stop jok3r-container
-          sudo docker rm jok3r-container
           sudo docker pull koutto/jok3r
 
       - name: Start Jok3r container in interactive mode for debugging
@@ -33,7 +36,6 @@ jobs:
 
       - name: Clone Jok3r and Install Dependencies in Docker Container
         run: |
-          sudo docker run -d --name jok3r-container koutto/jok3r
           sudo docker exec jok3r-container python3 jok3r.py toolbox --install-all --fast
 
       - name: Run Jok3r Scan on Provided URLs
