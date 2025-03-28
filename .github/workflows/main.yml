@@ -10,6 +10,7 @@ on:
 jobs:
   jok3r_scan:
     runs-on: ubuntu-latest
+    # GitHub Actions runners come with 7 GB of memory, so we should keep memory usage under control
 
     steps:
       - name: Checkout repository
@@ -18,10 +19,9 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-pip python3-dev git
-          sudo apt-get install -y curl ca-certificates
+          sudo apt-get install -y python3-pip python3-dev git curl ca-certificates
 
-      - name: Stop all running Docker containers
+      - name: Stop all running Docker containers (to free resources)
         run: |
           sudo docker stop $(sudo docker ps -q) || true
           sudo docker rm $(sudo docker ps -a -q) || true
@@ -30,23 +30,34 @@ jobs:
         run: |
           sudo docker pull koutto/jok3r
 
-      - name: Start Jok3r container in interactive mode for debugging
+      - name: Start Jok3r container with memory limits
         run: |
-          sudo docker run -d --name jok3r-container --memory=4g --cpus=2 koutto/jok3r python3 jok3r.py --help
+          # Run the Jok3r container with limited memory and CPU to prevent overuse of system resources
+          sudo docker run -d \
+            --name jok3r-container \
+            --memory="2g" \ # Limit memory to 2GB (adjust as necessary for your setup)
+            --cpus="1.0" \ # Limit CPU to 1 core (adjust as necessary)
+            koutto/jok3r python3 jok3r.py --help
 
       - name: Clone Jok3r and Install Dependencies in Docker Container
         run: |
+          # Use the 'docker exec' command carefully to avoid overloading memory
           sudo docker exec jok3r-container python3 jok3r.py toolbox --install-all --fast
 
       - name: Run Jok3r Scan on Provided URLs
         run: |
+          # Read URLs and loop through them with proper memory usage in mind
           IFS=',' read -r -a urls <<< "${{ github.event.inputs.urls }}"
           for url in "${urls[@]}"; do
             echo "Scanning $url"
+            # Limiting the number of concurrent scans to prevent excessive resource usage
             sudo docker exec jok3r-container python3 jok3r.py attack -t "$url" --all
+            sleep 5 # Adding a short delay between scans to reduce CPU strain
           done
 
       - name: Cleanup Docker container
         run: |
+          # Properly stopping and removing the Docker container to free up resources
           sudo docker stop jok3r-container
           sudo docker rm jok3r-container
+
