@@ -37,6 +37,10 @@ jobs:
         run: |
           cd LinkFinder
           python linkfinder.py -i ${{ github.event.inputs.url }} -o cli > $GITHUB_WORKSPACE/output/results.txt
+          
+      - name: List output directory contents (debugging step)
+        run: |
+          ls -la $GITHUB_WORKSPACE/output
 
       - name: Upload results
         uses: actions/upload-artifact@v4
