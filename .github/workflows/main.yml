@@ -35,7 +35,7 @@ jobs:
 
       - name: Run Jok3r Attack
         run: |
-          jok3r attack -t ${{ github.event.inputs.target_url }} --output jok3r_results || echo "Jok3r attack failed"
+          sudo jok3r attack -t ${{ github.event.inputs.target_url }} --output jok3r_results || echo "Jok3r attack failed"
 
       - name: Display Jok3r Results
         run: cat jok3r_results/* || echo "No Jok3r results found"
