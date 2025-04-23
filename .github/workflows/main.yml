@@ -7,9 +7,6 @@ on:
         description: 'Target domain to scan'
         required: true
 
-env:
-  GO_VERSION: '1.22'
-
 jobs:
   scan:
     runs-on: ubuntu-latest
@@ -17,10 +14,10 @@ jobs:
       DOMAIN: ${{ github.event.inputs.domain }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Python
+      - name: Setup Python 3
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
@@ -29,34 +26,35 @@ jobs:
         run: |
           git clone https://github.com/devanshbatham/ParamSpider paramspider
           cd paramspider
-          pip install .        # :contentReference[oaicite:8]{index=8}
+          pip install .
+
+      - name: Run ParamSpider
+        run: |
+          cd paramspider
+          paramspider -d $DOMAIN     # → creates results/$DOMAIN.txt
 
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: ${{ env.GO_VERSION }}    # :contentReference[oaicite:9]{index=9}
+          go-version: '1.22'
 
       - name: Install Nuclei
         run: |
-          go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest  # :contentReference[oaicite:10]{index=10}
+          go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
 
       - name: Update Nuclei Templates
         run: |
-          nuclei -update-templates   # :contentReference[oaicite:11]{index=11}
-
-      - name: Run ParamSpider
-        run: |
-          paramspider -d $DOMAIN -o params.txt   # :contentReference[oaicite:12]{index=12}
+          nuclei -update-templates
 
       - name: Run Nuclei Scan
         run: |
-          nuclei -l params.txt -o nuclei_results.txt   # :contentReference[oaicite:13]{index=13}
+          nuclei -l paramspider/results/$DOMAIN.txt -o nuclei_results.txt
 
       - name: Upload ParamSpider Results
         uses: actions/upload-artifact@v4
         with:
           name: paramspider-urls
-          path: params.txt
+          path: paramspider/results/$DOMAIN.txt
 
       - name: Upload Nuclei Findings
         uses: actions/upload-artifact@v4
