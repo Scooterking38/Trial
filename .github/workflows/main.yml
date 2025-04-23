@@ -53,13 +53,13 @@ jobs:
           nuclei -l params.txt -o nuclei_results.txt   # :contentReference[oaicite:13]{index=13}
 
       - name: Upload ParamSpider Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: paramspider-urls
           path: params.txt
 
       - name: Upload Nuclei Findings
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nuclei-findings
           path: nuclei_results.txt
