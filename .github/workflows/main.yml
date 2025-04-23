@@ -1,49 +1,65 @@
-name: Run LinkFinder on URL
+name: Recon Scan
 
 on:
   workflow_dispatch:
     inputs:
-      url:
-        description: 'URL to scan with LinkFinder'
+      domain:
+        description: 'Target domain to scan'
         required: true
-        type: string
+
+env:
+  GO_VERSION: '1.22'
 
 jobs:
-  run-linkfinder:
+  scan:
     runs-on: ubuntu-latest
+    env:
+      DOMAIN: ${{ github.event.inputs.domain }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.x'
 
-      - name: Install dependencies
+      - name: Install ParamSpider
         run: |
-          python -m pip install --upgrade pip
-          git clone https://github.com/GerbenJavado/LinkFinder.git
-          cd LinkFinder
-          python setup.py install
-          pip install -r requirements.txt
+          git clone https://github.com/devanshbatham/ParamSpider paramspider
+          cd paramspider
+          pip install .        # :contentReference[oaicite:8]{index=8}
 
-      - name: Create output directory
-        run: |
-          mkdir -p $GITHUB_WORKSPACE/output
-
-      - name: Run LinkFinder and save output to file
-        run: |
-          cd LinkFinder
-          python linkfinder.py -i ${{ github.event.inputs.url }} -o cli > $GITHUB_WORKSPACE/output/results.txt
-
-      - name: List output directory contents (debugging step)
-        run: |
-          ls -la $GITHUB_WORKSPACE/output
-
-      - name: Upload results
-        uses: actions/upload-artifact@v4
+      - name: Setup Go
+        uses: actions/setup-go@v4
         with:
-          name: linkfinder-results
-          path: output/results.txt
+          go-version: ${{ env.GO_VERSION }}    # :contentReference[oaicite:9]{index=9}
+
+      - name: Install Nuclei
+        run: |
+          go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest  # :contentReference[oaicite:10]{index=10}
+
+      - name: Update Nuclei Templates
+        run: |
+          nuclei -update-templates   # :contentReference[oaicite:11]{index=11}
+
+      - name: Run ParamSpider
+        run: |
+          paramspider -d $DOMAIN -o params.txt   # :contentReference[oaicite:12]{index=12}
+
+      - name: Run Nuclei Scan
+        run: |
+          nuclei -l params.txt -o nuclei_results.txt   # :contentReference[oaicite:13]{index=13}
+
+      - name: Upload ParamSpider Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: paramspider-urls
+          path: params.txt
+
+      - name: Upload Nuclei Findings
+        uses: actions/upload-artifact@v3
+        with:
+          name: nuclei-findings
+          path: nuclei_results.txt
